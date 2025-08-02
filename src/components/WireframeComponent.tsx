@@ -20,12 +20,15 @@ export const WireframeComponent: React.FC<Props> = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(component.label);
   const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
   const [resizeStart, setResizeStart] = useState<{ size: { width: number; height: number }; mouse: Position }>({
     size: { width: 0, height: 0 },
     mouse: { x: 0, y: 0 },
   });
   const componentRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -37,7 +40,7 @@ export const WireframeComponent: React.FC<Props> = ({
         size: { width: component.size.width, height: component.size.height },
         mouse: { x: e.clientX, y: e.clientY },
       });
-    } else {
+    } else if (!(e.target as HTMLElement).classList.contains('component-label-input')) {
       setIsDragging(true);
       setDragStart({
         x: e.clientX - component.position.x,
@@ -84,10 +87,43 @@ export const WireframeComponent: React.FC<Props> = ({
     }
   }, [isDragging, isResizing, dragStart, resizeStart, component]);
 
+  React.useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Delete' || e.key === 'Backspace') {
-      onDelete(component.id);
+      if (!isEditing) {
+        onDelete(component.id);
+      }
     }
+  };
+
+  const handleLabelClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(true);
+    setEditValue(component.label);
+  };
+
+  const handleLabelSubmit = () => {
+    onUpdate(component.id, { label: editValue.trim() || 'Component' });
+    setIsEditing(false);
+  };
+
+  const handleLabelKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleLabelSubmit();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setEditValue(component.label);
+    }
+  };
+
+  const handleLabelBlur = () => {
+    handleLabelSubmit();
   };
 
   return (
@@ -106,7 +142,30 @@ export const WireframeComponent: React.FC<Props> = ({
       onKeyDown={handleKeyDown}
       tabIndex={0}
     >
-      {component.label}
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          className="component-label-input"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={handleLabelKeyDown}
+          onBlur={handleLabelBlur}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'inherit',
+            fontSize: 'inherit',
+            fontWeight: 'inherit',
+            textAlign: 'center',
+            width: '100%',
+            outline: 'none',
+          }}
+        />
+      ) : (
+        <span onClick={handleLabelClick} style={{ cursor: 'text' }}>
+          {component.label}
+        </span>
+      )}
       {isSelected && (
         <div className="resize-handle se" />
       )}

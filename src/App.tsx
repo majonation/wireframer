@@ -183,21 +183,108 @@ const App: React.FC = () => {
           y: fromScreen.position.y + fromScreen.size.height / 2,
         };
 
-        // If connecting from a specific component, use its position
+        // If connecting from a specific component, calculate edge position
         if (connectionStart.componentId) {
           const component = fromScreen.components.find(c => c.id === connectionStart.componentId);
           if (component) {
-            startPoint = {
-              x: fromScreen.position.x + component.position.x + component.size.width / 2,
-              y: fromScreen.position.y + component.position.y + component.size.height / 2 + 40, // Account for header
-            };
+            const componentAbsoluteX = fromScreen.position.x + component.position.x;
+            const componentAbsoluteY = fromScreen.position.y + component.position.y + 40; // Account for header
+            const componentCenterX = componentAbsoluteX + component.size.width / 2;
+            const componentCenterY = componentAbsoluteY + component.size.height / 2;
+            
+            const toScreenCenterX = toScreen.position.x + toScreen.size.width / 2;
+            const toScreenCenterY = toScreen.position.y + toScreen.size.height / 2;
+            
+            // Calculate direction from component to target screen
+            const dx = toScreenCenterX - componentCenterX;
+            const dy = toScreenCenterY - componentCenterY;
+            
+            // Determine which edge of the component to start from
+            const absX = Math.abs(dx);
+            const absY = Math.abs(dy);
+            
+            if (absX > absY) {
+              // Horizontal direction is dominant
+              if (dx > 0) {
+                // Going right
+                startPoint = {
+                  x: componentAbsoluteX + component.size.width,
+                  y: componentCenterY,
+                };
+              } else {
+                // Going left
+                startPoint = {
+                  x: componentAbsoluteX,
+                  y: componentCenterY,
+                };
+              }
+            } else {
+              // Vertical direction is dominant
+              if (dy > 0) {
+                // Going down
+                startPoint = {
+                  x: componentCenterX,
+                  y: componentAbsoluteY + component.size.height,
+                };
+              } else {
+                // Going up
+                startPoint = {
+                  x: componentCenterX,
+                  y: componentAbsoluteY,
+                };
+              }
+            }
           }
         }
         
-        const endPoint = {
-          x: toScreen.position.x + toScreen.size.width / 2,
-          y: toScreen.position.y + toScreen.size.height / 2,
+        // Calculate end point at the edge of the target screen
+        const toScreenCenterX = toScreen.position.x + toScreen.size.width / 2;
+        const toScreenCenterY = toScreen.position.y + toScreen.size.height / 2;
+        
+        // Calculate direction from start point to target screen center
+        const dx = toScreenCenterX - startPoint.x;
+        const dy = toScreenCenterY - startPoint.y;
+        
+        let endPoint = {
+          x: toScreenCenterX,
+          y: toScreenCenterY,
         };
+        
+        // Determine which edge of the target screen to end at
+        const absX = Math.abs(dx);
+        const absY = Math.abs(dy);
+        
+        if (absX > absY) {
+          // Horizontal direction is dominant
+          if (dx > 0) {
+            // Coming from left
+            endPoint = {
+              x: toScreen.position.x,
+              y: toScreenCenterY,
+            };
+          } else {
+            // Coming from right
+            endPoint = {
+              x: toScreen.position.x + toScreen.size.width,
+              y: toScreenCenterY,
+            };
+          }
+        } else {
+          // Vertical direction is dominant
+          if (dy > 0) {
+            // Coming from top
+            endPoint = {
+              x: toScreenCenterX,
+              y: toScreen.position.y,
+            };
+          } else {
+            // Coming from bottom
+            endPoint = {
+              x: toScreenCenterX,
+              y: toScreen.position.y + toScreen.size.height,
+            };
+          }
+        }
         
         const newConnection = {
           id: uuidv4(),

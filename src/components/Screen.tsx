@@ -96,11 +96,13 @@ export const Screen: React.FC<Props> = ({
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       
+      const componentNumber = screen.components.length + 1;
+      
       const newComponent: WireframeComponentType = {
         id: uuidv4(),
         position: { x: Math.max(0, x - 50), y: Math.max(0, y - 25) },
         size: { width: 100, height: 50 },
-        label: 'Component',
+        label: `Container ${componentNumber}`,
         color: COMPONENT_COLORS[0],
         screenId: screen.id,
       };

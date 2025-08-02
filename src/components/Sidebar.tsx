@@ -25,7 +25,7 @@ export const Sidebar: React.FC<Props> = ({
             type="text"
             value={selectedComponent.label}
             onChange={(e) => onComponentUpdate(selectedComponent.id, { label: e.target.value })}
-            placeholder="Component label"
+            placeholder="Container label"
           />
         </div>
         
@@ -149,10 +149,11 @@ export const Sidebar: React.FC<Props> = ({
       <h3>Getting Started</h3>
       <p style={{ fontSize: '0.875rem', color: '#6b7280', lineHeight: '1.5' }}>
         • Click "Add Screen" to create a new screen<br/>
-        • Double-click on a screen to quickly add components<br/>
-        • Drag components and screens to move them<br/>
-        • Use the resize handle to change component size<br/>
-        • Select a component, then click "Connect" to link to another screen<br/>
+        • Double-click on a screen to quickly add containers<br/>
+        • Click on container labels to edit them inline<br/>
+        • Drag containers and screens to move them<br/>
+        • Use the resize handle to change container size<br/>
+        • Select a container, then click "Connect" to link to another screen<br/>
         • Use the three dots menu (⋮) on screens to duplicate or delete<br/>
         • Export your wireframe as an image when done
       </p>
