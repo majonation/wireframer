@@ -29,7 +29,7 @@ const App: React.FC = () => {
     const newScreen: ScreenType = {
       id: uuidv4(),
       position: { 
-        x: 50 + project.screens.length * 350, 
+        x: 50 + project.screens.length * 450, 
         y: 50 
       },
       size: SCREEN_SIZE,
@@ -37,6 +37,38 @@ const App: React.FC = () => {
       components: [],
     };
     
+    setProject(prev => ({
+      ...prev,
+      screens: [...prev.screens, newScreen],
+      selectedScreenId: newScreen.id,
+    }));
+  };
+
+  const duplicateScreen = (screenId: string) => {
+    const screenToDuplicate = project.screens.find(s => s.id === screenId);
+    if (!screenToDuplicate) return;
+
+    const newScreen: ScreenType = {
+      ...screenToDuplicate,
+      id: uuidv4(),
+      title: `${screenToDuplicate.title} Copy`,
+      position: {
+        x: screenToDuplicate.position.x + 50,
+        y: screenToDuplicate.position.y + 50,
+      },
+      components: screenToDuplicate.components.map(component => ({
+        ...component,
+        id: uuidv4(),
+        screenId: uuidv4(), // This will be updated below
+      })),
+    };
+
+    // Update component screenIds to match the new screen
+    newScreen.components = newScreen.components.map(component => ({
+      ...component,
+      screenId: newScreen.id,
+    }));
+
     setProject(prev => ({
       ...prev,
       screens: [...prev.screens, newScreen],
@@ -65,11 +97,15 @@ const App: React.FC = () => {
   };
 
   const selectScreen = (id: string) => {
-    setProject(prev => ({
-      ...prev,
-      selectedScreenId: id,
-      selectedComponentId: undefined,
-    }));
+    if (isConnecting && connectionStart && connectionStart.screenId !== id) {
+      finishConnection(id);
+    } else {
+      setProject(prev => ({
+        ...prev,
+        selectedScreenId: id,
+        selectedComponentId: undefined,
+      }));
+    }
   };
 
   const selectComponent = (componentId: string) => {
@@ -115,11 +151,23 @@ const App: React.FC = () => {
   };
 
   const startConnection = () => {
-    if (project.selectedScreenId) {
+    if (project.selectedComponentId) {
+      // Find the screen that contains the selected component
+      const componentScreen = project.screens.find(screen => 
+        screen.components.some(comp => comp.id === project.selectedComponentId)
+      );
+      
+      if (componentScreen) {
+        setIsConnecting(true);
+        setConnectionStart({ 
+          screenId: componentScreen.id,
+          componentId: project.selectedComponentId 
+        });
+      }
+    } else if (project.selectedScreenId) {
       setIsConnecting(true);
       setConnectionStart({ 
-        screenId: project.selectedScreenId,
-        componentId: project.selectedComponentId 
+        screenId: project.selectedScreenId
       });
     }
   };
@@ -130,10 +178,21 @@ const App: React.FC = () => {
       const toScreen = project.screens.find(s => s.id === targetScreenId);
       
       if (fromScreen && toScreen) {
-        const startPoint = {
+        let startPoint = {
           x: fromScreen.position.x + fromScreen.size.width / 2,
           y: fromScreen.position.y + fromScreen.size.height / 2,
         };
+
+        // If connecting from a specific component, use its position
+        if (connectionStart.componentId) {
+          const component = fromScreen.components.find(c => c.id === connectionStart.componentId);
+          if (component) {
+            startPoint = {
+              x: fromScreen.position.x + component.position.x + component.size.width / 2,
+              y: fromScreen.position.y + component.position.y + component.size.height / 2 + 40, // Account for header
+            };
+          }
+        }
         
         const endPoint = {
           x: toScreen.position.x + toScreen.size.width / 2,
@@ -145,7 +204,7 @@ const App: React.FC = () => {
           fromScreenId: connectionStart.screenId,
           toScreenId: targetScreenId,
           fromComponentId: connectionStart.componentId,
-          description: connectionDescription || 'Navigate',
+          description: connectionDescription || (connectionStart.componentId ? 'Click' : 'Navigate'),
           startPoint,
           endPoint,
         };
@@ -209,6 +268,17 @@ const App: React.FC = () => {
     .flatMap(s => s.components)
     .find(c => c.id === project.selectedComponentId);
 
+  const canConnect = project.selectedComponentId || project.selectedScreenId;
+  const connectionInstructions = isConnecting 
+    ? (connectionStart?.componentId 
+        ? 'Click on a screen to connect this component' 
+        : 'Click on a screen to connect')
+    : (project.selectedComponentId 
+        ? 'Connect this component to another screen'
+        : project.selectedScreenId 
+          ? 'Connect this screen to another screen'
+          : 'Select a component or screen first');
+
   return (
     <div className="app">
       <div className="toolbar">
@@ -222,9 +292,10 @@ const App: React.FC = () => {
           <button 
             className="btn" 
             onClick={startConnection}
-            disabled={!project.selectedScreenId || isConnecting}
+            disabled={!canConnect}
+            title={connectionInstructions}
           >
-            {isConnecting ? 'Click target screen' : 'Connect Screens'}
+            {isConnecting ? 'Click target screen' : 'Connect'}
           </button>
           
           {isConnecting && (
@@ -263,8 +334,10 @@ const App: React.FC = () => {
                 screen={screen}
                 isSelected={project.selectedScreenId === screen.id}
                 selectedComponentId={project.selectedComponentId}
-                onSelect={isConnecting ? finishConnection : selectScreen}
+                onSelect={selectScreen}
                 onUpdate={updateScreen}
+                onDuplicate={duplicateScreen}
+                onDelete={deleteScreen}
                 onComponentSelect={selectComponent}
                 onComponentUpdate={updateComponent}
                 onComponentDelete={deleteComponent}

@@ -48,8 +48,8 @@ export const WireframeComponent: React.FC<Props> = ({
 
   const handleMouseMove = (e: MouseEvent) => {
     if (isDragging) {
-      const newX = Math.max(0, Math.min(300 - component.size.width, e.clientX - dragStart.x));
-      const newY = Math.max(0, Math.min(500 - component.size.height, e.clientY - dragStart.y));
+      const newX = Math.max(0, Math.min(400 - component.size.width, e.clientX - dragStart.x));
+      const newY = Math.max(0, Math.min(300 - component.size.height, e.clientY - dragStart.y));
       
       onUpdate(component.id, {
         position: { x: newX, y: newY },
@@ -58,8 +58,8 @@ export const WireframeComponent: React.FC<Props> = ({
       const deltaX = e.clientX - resizeStart.mouse.x;
       const deltaY = e.clientY - resizeStart.mouse.y;
       
-      const newWidth = Math.max(40, Math.min(300 - component.position.x, resizeStart.size.width + deltaX));
-      const newHeight = Math.max(20, Math.min(500 - component.position.y, resizeStart.size.height + deltaY));
+      const newWidth = Math.max(40, Math.min(400 - component.position.x, resizeStart.size.width + deltaX));
+      const newHeight = Math.max(20, Math.min(300 - component.position.y, resizeStart.size.height + deltaY));
       
       onUpdate(component.id, {
         size: { width: newWidth, height: newHeight },

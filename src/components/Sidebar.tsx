@@ -74,6 +74,7 @@ export const Sidebar: React.FC<Props> = ({
               size: { ...selectedComponent.size, width: parseInt(e.target.value) || 40 }
             })}
             min="40"
+            max="400"
           />
         </div>
         
@@ -86,6 +87,7 @@ export const Sidebar: React.FC<Props> = ({
               size: { ...selectedComponent.size, height: parseInt(e.target.value) || 20 }
             })}
             min="20"
+            max="300"
           />
         </div>
       </div>
@@ -147,10 +149,11 @@ export const Sidebar: React.FC<Props> = ({
       <h3>Getting Started</h3>
       <p style={{ fontSize: '0.875rem', color: '#6b7280', lineHeight: '1.5' }}>
         • Click "Add Screen" to create a new screen<br/>
-        • Double-click on a screen to add components<br/>
+        • Double-click on a screen to quickly add components<br/>
         • Drag components and screens to move them<br/>
         • Use the resize handle to change component size<br/>
-        • Select items to edit their properties<br/>
+        • Select a component, then click "Connect" to link to another screen<br/>
+        • Use the three dots menu (⋮) on screens to duplicate or delete<br/>
         • Export your wireframe as an image when done
       </p>
     </div>

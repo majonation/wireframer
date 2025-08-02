@@ -54,6 +54,6 @@ export const COMPONENT_COLORS = [
 ] as const;
 
 export const SCREEN_SIZE = {
-  width: 300,
-  height: 500,
+  width: 400,
+  height: 300,
 } as const;

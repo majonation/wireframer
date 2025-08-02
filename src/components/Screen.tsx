@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Screen as ScreenType, WireframeComponent as WireframeComponentType, Position, COMPONENT_COLORS } from '../types';
 import { WireframeComponent } from './WireframeComponent';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,6 +9,8 @@ interface Props {
   selectedComponentId?: string;
   onSelect: (id: string) => void;
   onUpdate: (id: string, updates: Partial<ScreenType>) => void;
+  onDuplicate: (id: string) => void;
+  onDelete: (id: string) => void;
   onComponentSelect: (componentId: string) => void;
   onComponentUpdate: (componentId: string, updates: Partial<WireframeComponentType>) => void;
   onComponentDelete: (componentId: string) => void;
@@ -21,6 +23,8 @@ export const Screen: React.FC<Props> = ({
   selectedComponentId,
   onSelect,
   onUpdate,
+  onDuplicate,
+  onDelete,
   onComponentSelect,
   onComponentUpdate,
   onComponentDelete,
@@ -28,15 +32,21 @@ export const Screen: React.FC<Props> = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).classList.contains('screen-header')) {
-      onSelect(screen.id);
-      setIsDragging(true);
-      setDragStart({
-        x: e.clientX - screen.position.x,
-        y: e.clientY - screen.position.y,
-      });
+    if ((e.target as HTMLElement).classList.contains('screen-header') || 
+        (e.target as HTMLElement).closest('.screen-header')) {
+      if (!(e.target as HTMLElement).classList.contains('screen-menu-button') &&
+          !(e.target as HTMLElement).closest('.screen-menu-button')) {
+        onSelect(screen.id);
+        setIsDragging(true);
+        setDragStart({
+          x: e.clientX - screen.position.x,
+          y: e.clientY - screen.position.y,
+        });
+      }
     }
   };
 
@@ -67,6 +77,19 @@ export const Screen: React.FC<Props> = ({
     }
   }, [isDragging, dragStart, screen]);
 
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMenu]);
+
   const handleDoubleClick = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).classList.contains('screen-content')) {
       const rect = (e.target as HTMLElement).getBoundingClientRect();
@@ -87,6 +110,23 @@ export const Screen: React.FC<Props> = ({
     }
   };
 
+  const handleMenuClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowMenu(!showMenu);
+  };
+
+  const handleDuplicate = () => {
+    onDuplicate(screen.id);
+    setShowMenu(false);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this screen?')) {
+      onDelete(screen.id);
+    }
+    setShowMenu(false);
+  };
+
   return (
     <div
       className={`screen ${isSelected ? 'selected' : ''}`}
@@ -100,6 +140,22 @@ export const Screen: React.FC<Props> = ({
     >
       <div className="screen-header">
         {screen.title}
+        <button 
+          className="screen-menu-button"
+          onClick={handleMenuClick}
+        >
+          ⋮
+        </button>
+        {showMenu && (
+          <div ref={menuRef} className="screen-menu">
+            <button className="screen-menu-item" onClick={handleDuplicate}>
+              Duplicate
+            </button>
+            <button className="screen-menu-item" onClick={handleDelete}>
+              Delete
+            </button>
+          </div>
+        )}
       </div>
       <div 
         className="screen-content"
